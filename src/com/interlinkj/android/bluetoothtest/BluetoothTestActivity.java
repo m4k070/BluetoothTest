@@ -14,7 +14,7 @@ import android.view.*;
 import android.view.View.OnClickListener;
 import android.widget.*;
 
-public class BluetoothTestActivity extends ListActivity implements OnClickListener {
+public class BluetoothTestActivity extends ListActivity {
 	private final int REQUEST_ENABLE_BLUETOOTH = 1;
 	public static final String TAG = "BluetoothTest";
 
@@ -24,6 +24,7 @@ public class BluetoothTestActivity extends ListActivity implements OnClickListen
 	private ListRowAdapter mListAdapter;
 	private List<DeviceEntry> mEntries;
 	private DiscoveryReceiver mDiscoveryListener;
+	private OnClickListener mOnClickListener;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -33,19 +34,32 @@ public class BluetoothTestActivity extends ListActivity implements OnClickListen
 		setContentView(R.layout.main);
 
 		if(!ensureBluetooth()) {
-			showAlert("");
+			showAlert("Bluetoothが無効です");
 		} else {
 			if(!ensureEnabled()) {
-				showAlert("");
+				showAlert("Bluetoothが有効になりませんでした");
 			}
 		}
-		
+
 		if(null == mBluetooth) {
 			finish();
 		}
+		
+		mOnClickListener = new OnClickListener() {
 
-		Button button = (Button)findViewById(R.id.button01);
-		button.setOnClickListener(this);
+			public void onClick(View arg0) {
+				// ペアリング済みデバイスの取得
+				mBondedDevices = new ArrayList<BluetoothDevice>();
+				Set<BluetoothDevice> devices = mBluetooth.getBondedDevices();
+				for(BluetoothDevice device : devices) {
+					mBondedDevices.add(device);
+				}
+
+				// デバイス検索の開始
+				startDiscovery();
+			}
+			
+		};
 
 		mEntries = new ArrayList<DeviceEntry>();
 		mListAdapter = new ListRowAdapter(getApplicationContext(),
@@ -70,6 +84,9 @@ public class BluetoothTestActivity extends ListActivity implements OnClickListen
 		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
 		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 		registerReceiver(mDiscoveryListener, filter);
+
+		Button button = (Button)findViewById(R.id.button01);
+		button.setOnClickListener(mOnClickListener);
 	}
 
 	private boolean ensureBluetooth() {
@@ -92,11 +109,11 @@ public class BluetoothTestActivity extends ListActivity implements OnClickListen
 	}
 
 	private void showAlert(String str) {
-
+		Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
 	}
 
 	private void onBluetoothEnabled() {
-
+		Toast.makeText(getApplicationContext(), "Bluetooth is Enabled.", Toast.LENGTH_SHORT).show();
 	}
 
 	@Override
@@ -113,15 +130,7 @@ public class BluetoothTestActivity extends ListActivity implements OnClickListen
 	}
 
 	public void onClick(View view) {
-		// ペアリング済みデバイスの取得
-		mBondedDevices = new ArrayList<BluetoothDevice>();
-		Set<BluetoothDevice> devices = mBluetooth.getBondedDevices();
-		for(BluetoothDevice device : devices) {
-			mBondedDevices.add(device);
-		}
-
-		// デバイス検索の開始
-		startDiscovery();
+		
 	}
 
 	private void startDiscovery() {
@@ -205,7 +214,7 @@ public class BluetoothTestActivity extends ListActivity implements OnClickListen
 			}
 		}
 	}
-	
+
 	/**
 	 * ListView用Adapter
 	 * 
@@ -241,8 +250,9 @@ public class BluetoothTestActivity extends ListActivity implements OnClickListen
 
 			TextView addrView = (TextView)v.findViewById(R.id.MAC);
 			addrView.setText(row.getMAC());
-			addrView.setOnTouchListener(mTouchListener);
-			
+
+			v.setOnTouchListener(mTouchListener);
+
 			return v;
 		}
 
@@ -255,15 +265,14 @@ public class BluetoothTestActivity extends ListActivity implements OnClickListen
 					break;
 				case MotionEvent.ACTION_UP:
 					Log.v(TAG, "ACTION_UP");
+					TextView textView = (TextView)v.findViewById(R.id.MAC);
 					// インテント発行
-					
 					Intent i = new Intent();
 					i.setClassName("com.interlinkj.android.bluetoothtest",
 							"com.interlinkj.android.bluetoothtest.BluetoothTransActivity");
-					i.putExtra("MACAddress", ((TextView)v).getText());
+					i.putExtra("MACAddress", ((TextView)textView).getText());
 					startActivityIfNeeded(i, -1);
-					
-					
+
 					break;
 				case MotionEvent.ACTION_MOVE:
 					Log.v(TAG, "ACTION_MOVE");

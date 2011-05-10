@@ -10,7 +10,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.widget.TextView;
 
 public class BluetoothTransActivity extends Activity {
@@ -64,7 +63,7 @@ public class BluetoothTransActivity extends Activity {
 		super.onResume();
 
 		TextView textView = (TextView)findViewById(R.id.textView1);
-//		textView.setText(receive());
+		textView.setText(receive());
 	}
 	
 	@Override

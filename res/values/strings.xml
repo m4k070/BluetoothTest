@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="hello">Hello World, BluetoothTestActivity!</string>
-    <string name="app_name">BlutoothTest</string>
+    <string name="app_name">BluetoothTest</string>
     <string name="refresh">更新</string>
 </resources>
