@@ -3,7 +3,7 @@
 	android:layout_width="fill_parent" android:layout_height="fill_parent">
 	<TextView android:text="TextView" android:id="@+id/deviceName"
 		android:layout_width="fill_parent" android:layout_height="48px"></TextView>
-	<TextView android:layout_height="48px"
+	<TextView android:layout_height="64px"
 		android:layout_width="fill_parent" android:text="TextView"
 		android:id="@+id/MAC"></TextView>
 </LinearLayout>

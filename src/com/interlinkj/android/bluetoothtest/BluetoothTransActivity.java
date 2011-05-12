@@ -31,8 +31,17 @@ public class BluetoothTransActivity extends Activity {
 	private TextView mTextView;
 	private ConnectedThread mConnectedThread;
 	private BluetoothDevice mDevice;
+	private String mText;
 
 	public byte[] mBuffer;
+
+	public String getText() {
+		return mText;
+	}
+
+	protected void setText(String s) {
+		mText = s;
+	}
 
 	@Override
 	public void onCreate(Bundle icicle) {
@@ -57,11 +66,6 @@ public class BluetoothTransActivity extends Activity {
 
 		ConnectThread connectThread = new ConnectThread(mDevice);
 		connectThread.run();
-
-		while(true) {
-			Message msg = mHandler.obtainMessage(MESSAGE_READ, mBuffer);
-			mHandler.sendMessageDelayed(msg, 1000);
-		}
 	}
 
 	@Override
@@ -77,7 +81,7 @@ public class BluetoothTransActivity extends Activity {
 	public void manageConnectedSocket(BluetoothSocket mmSocket) {
 		mSocket = mmSocket;
 		mConnectedThread = new ConnectedThread(mSocket);
-		mConnectedThread.run();
+		mConnectedThread.start();
 	}
 
 	private class ConnectThread extends Thread {
@@ -90,9 +94,9 @@ public class BluetoothTransActivity extends Activity {
 			BluetoothSocket tmp = null;
 			mmDevice = device;
 
-			// Get a BluetoothSocket to connect with the given BluetoothDevice
+			// BluetoothSocketの作成
 			try {
-				// MY_UUID is the app's UUID string, also used by the server code
+				// UUIDを指定してrfcommのソケットを作成
 				tmp = device
 						.createRfcommSocketToServiceRecord(SERIAL_PORT_PROFILE);
 			} catch(IOException e) {
@@ -101,15 +105,14 @@ public class BluetoothTransActivity extends Activity {
 		}
 
 		public void run() {
-			// Cancel discovery because it will slow down the connection
+			// 通信開始前にデバイスの探索を中止させる
 			mAdapter.cancelDiscovery();
 
 			try {
-				// Connect the device through the socket. This will block
-				// until it succeeds or throws an exception
+				// ソケットを利用して通信を開始する
 				mmSocket.connect();
 			} catch(IOException connectException) {
-				// Unable to connect; close the socket and get out
+				// 例外が発生した場合はソケットを閉じ処理を抜ける
 				try {
 					mmSocket.close();
 				} catch(IOException closeException) {
@@ -140,8 +143,7 @@ public class BluetoothTransActivity extends Activity {
 			InputStream tmpIn = null;
 			OutputStream tmpOut = null;
 
-			// Get the input and output streams, using temp objects because
-			// member streams are final
+			// ソケットからInputStreamとOutputStreamを取得する
 			try {
 				tmpIn = socket.getInputStream();
 				tmpOut = socket.getOutputStream();
@@ -153,30 +155,29 @@ public class BluetoothTransActivity extends Activity {
 		}
 
 		public void run() {
-			byte[] buffer = new byte[1024]; // buffer store for the stream
+			final byte[] buffer = new byte[1024]; // buffer store for the stream
 			int bytes; // bytes returned from read()
 
-			// Keep listening to the InputStream until an exception occurs
+			// 例外が発生するまで受信処理を続ける
 			while(true) {
 				try {
 					// Read from the InputStream
-					bytes = mmInStream.read(mBuffer);
+					bytes = mmInStream.read(buffer);
 
-					/*
 					// Send the obtained bytes to the UI Activity
 					Message msg = mHandler.obtainMessage(MESSAGE_READ, bytes,
 							-1, buffer);
-					mHandler.sendMessage(msg);
-					*/
+					if(!mHandler.sendMessage(msg)) {
+						Log.e(TAG, "sendMessage Failed.");
+					}
 
 					/*
 					 * mHandler.post(new Runnable() { public void run() {
-					 * mTextView.setText(new String(buffer)); } });
+					 * StringBuilder sb = new StringBuilder();
+					 * sb.append(mTextView); sb.append("\r\n"); sb.append(new
+					 * String(buffer)); mTextView.setText(sb.toString()); } });
 					 */
-					Thread.sleep(1000);
 				} catch(IOException e) {
-					break;
-				} catch(InterruptedException e) {
 					break;
 				}
 			}
@@ -199,19 +200,23 @@ public class BluetoothTransActivity extends Activity {
 		}
 	}
 
+	// 受信処理のHandler
 	public class ReceiveHandler extends Handler {
 		@Override
 		public void handleMessage(Message msg) {
 			Log.d(TAG, "handleMessage");
 			if(msg.what == MESSAGE_READ) {
+				/*
 				StringBuilder sb = new StringBuilder();
+				
 				sb.append(mTextView.getText());
-				sb.append("\r\n");
 				byte[] data = (byte[])msg.obj;
-				sb.append(data);
-				Toast.makeText(getApplicationContext(), new String(data),
-						Toast.LENGTH_SHORT);
+				sb.append(new String(data));
 				mTextView.setText(sb.toString());
+				*/
+				String tmp = (String)mTextView.getText();
+				tmp += new String((byte[])msg.obj);
+				mTextView.setText(tmp);
 			}
 		}
 	}
